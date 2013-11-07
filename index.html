@@ -1,0 +1,103 @@
+<!doctype html>
+<head>
+<meta charset="utf-8" />
+<title>tal</title>
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="http://underscorejs.org/underscore-min.js"></script>
+<script type="text/javascript" src="http://epeli.github.io/underscore.string/dist/underscore.string.min.js"></script>
+<script type="text/javascript">
+function getDate(d) {
+	return d.getFullYear()+''+_.string.lpad(d.getMonth()+1, 2, '0')+''+_.string.lpad(d.getDate(), 2, '0');
+}
+
+$(function () {
+	var $today = $('#today');
+	var today = getDate(new Date());
+	var tomorrow = getDate(new Date(new Date() + 86400000));
+
+	function list(date) {
+		$.get('/tal.php?action=getlist', {date: date}, function (ans) {
+			$today.empty();
+			_.each(ans, function (v) {
+				var operate = v.done
+				            ? '√'
+				            : '<button class="finish">√</button><button class="erase">X</button><button class="postpone">></button>';
+				var priority = ['', 'C', 'B', 'A'][v.priority];
+
+				$today.append('<tr data-id="'+v.id+'"><td>'+v.text+'</td><td>'+priority+'</td><td>'+operate+'</td></tr>');
+ 			});	
+		}, 'json');
+	}
+
+	function write(text, priority, fn) {
+		$.post('/tal.php?action=write', {text: text, priority: priority}, function () {
+			if (_.isFunction(fn)) {
+				fn();
+			}
+		});
+	}
+
+	function postpone(id, fn) {
+		$.post('/tal.php?action=postpone', {id: id}, function () {
+			if (_.isFunction(fn)) {
+				fn();
+			}
+		});
+	}
+
+	function erase(id, fn) {
+		$.post('/tal.php?action=erase', {id: id}, function () {
+			if (_.isFunction(fn)) {
+				fn();
+			}
+		});
+	}
+
+	function finish(id, fn) {
+		$.post('/tal.php?action=finish', {id: id}, function () {
+			if (_.isFunction(fn)) {
+				fn();
+			}
+		});
+	}
+
+	$('#write').on('keyup', function (e) {
+		var $write = $(this);
+		if (e.keyCode === 13) {
+			var text = $write.val().split('|');
+			if (text.length === 0) {
+				text[1] = 2;
+			}
+			write(text[0], text[1], function () {
+				$write.val('');
+				list(today);
+			});
+		}
+	});
+
+	$('#today').on('click', '.postpone', function () {
+		var id = $(this).closest('tr').data('id');
+		postpone(id, listToday);
+	}).on('click', '.erase', function () {
+		var id = $(this).closest('tr').data('id');
+		erase(id, listToday);
+	}).on('click', '.finish', function () {
+		var id = $(this).closest('tr').data('id');
+		finish(id, listToday);
+	});
+
+	function listToday() {
+		list(today);
+	}
+
+	listToday();
+});
+</script>
+</head>
+<body>
+<div id="panel-today">
+	<input type="text" id="write">
+	<table id="today"></table>
+</div>
+</body>
+</html>
