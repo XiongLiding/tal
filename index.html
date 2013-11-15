@@ -24,13 +24,13 @@ $(function () {
 				            : '<button class="finish">√</button><button class="erase">X</button><button class="postpone">></button>';
 				var priority = ['', 'C', 'B', 'A'][v.priority];
 
-				$today.append('<tr data-id="'+v.id+'"><td>'+v.text+'</td><td>'+priority+'</td><td>'+operate+'</td></tr>');
+				$today.append('<tr data-id="'+v.id+'"><td>'+v.text+'</td><td>'+v.cost+'</td><td>'+priority+'</td><td>'+operate+'</td></tr>');
  			});	
 		}, 'json');
 	}
 
-	function write(text, priority, fn) {
-		$.post('/tal.php?action=write', {text: text, priority: priority}, function () {
+	function write(text, cost, priority, fn) {
+		$.post('/tal.php?action=write', {text: text, cost: cost, priority: priority}, function () {
 			if (_.isFunction(fn)) {
 				fn();
 			}
@@ -64,11 +64,11 @@ $(function () {
 	$('#write').on('keyup', function (e) {
 		var $write = $(this);
 		if (e.keyCode === 13) {
-			var text = $write.val().split('|');
+			var text = $write.val().split(/\s+/);
 			if (text.length === 0) {
 				text[1] = 2;
 			}
-			write(text[0], text[1], function () {
+			write(text[0], text[1], text[2], function () {
 				$write.val('');
 				list(today);
 			});
